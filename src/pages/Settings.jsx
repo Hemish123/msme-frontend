@@ -163,7 +163,11 @@ export default function Settings() {
                 {user?.company_logo && (
                   <div className="mb-3">
                     <p className="text-xs text-emerald-600 mb-1">Current Logo:</p>
-                    <img src={`http://localhost:8000${user.company_logo}`} alt="Logo" className="h-16 object-contain" />
+                    <img src={
+                      user.company_logo.startsWith('http') && !user.company_logo.includes('localhost') && !user.company_logo.includes('127.0.0.1')
+                        ? user.company_logo 
+                        : `${import.meta.env.VITE_API_BASE_URL.replace(/\/api\/?$/, '')}${user.company_logo.replace(/^https?:\/\/[^\/]+/, '')}`
+                    } alt="Logo" className="h-16 object-contain" />
                   </div>
                 )}
                 <input name="company_logo" type="file" accept="image/*" onChange={onChange}
