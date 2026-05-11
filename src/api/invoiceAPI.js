@@ -36,3 +36,7 @@ export const getInvoiceStats = () =>
 
 export const getInvoiceTemplates = () =>
   apiCall(() => api.get('/invoices/templates/'));
+
+export const scheduleInvoiceReminder = (id, scheduled_at) =>
+  apiCall(() => api.post(`/invoices/${id}/schedule-reminder/`, { scheduled_at }));
+

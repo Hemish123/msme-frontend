@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { FileText, IndianRupee, Clock, CheckCircle, Download, Pencil, Trash2, CheckCircle2, Search, Mail, Filter } from 'lucide-react';
+import { FileText, IndianRupee, Clock, CheckCircle, Download, Pencil, Trash2, CheckCircle2, Search, Mail, CalendarClock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import InvoiceNav from '../../components/invoice/InvoiceNav';
-import { getInvoiceStats, getInvoices, downloadInvoicePDF, deleteInvoice, updateInvoice, resendInvoiceEmail } from '../../api/invoiceAPI';
+import { getInvoiceStats, getInvoices, downloadInvoicePDF, deleteInvoice, updateInvoice, resendInvoiceEmail, scheduleInvoiceReminder } from '../../api/invoiceAPI';
 
 const STATUS_COLORS = {
   DRAFT: 'bg-slate-100 text-slate-600',
@@ -21,6 +21,7 @@ export default function InvoiceDashboard() {
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: '', inv: null });
+  const [scheduleModal, setScheduleModal] = useState({ isOpen: false, inv: null, datetime: '' });
   const navigate = useNavigate();
   const pageSize = 20;
 
@@ -77,6 +78,21 @@ export default function InvoiceDashboard() {
     const { error } = await updateInvoice(inv.id, { status: newStatus });
     if (!error) { toast.success(`Invoice #${inv.invoice_number} → ${newStatus}`); await loadData(); }
     else toast.error('Failed to update status.');
+  };
+
+  const handleScheduleReminder = async (e) => {
+    e.preventDefault();
+    const { inv, datetime } = scheduleModal;
+    if (!datetime) return;
+    
+    const { error } = await scheduleInvoiceReminder(inv.id, datetime);
+    if (!error) {
+      toast.success(`Reminder scheduled for Invoice #${inv.invoice_number}`);
+      setScheduleModal({ isOpen: false, inv: null, datetime: '' });
+      await loadData();
+    } else {
+      toast.error(typeof error === 'string' ? error : 'Failed to schedule reminder');
+    }
   };
 
   const filtered = invoices.filter(inv => {
@@ -195,6 +211,14 @@ export default function InvoiceDashboard() {
                             >
                               <Mail className="w-4 h-4" />
                             </button>
+                            <button
+                              onClick={() => setScheduleModal({ isOpen: true, inv, datetime: '' })}
+                              className={`p-1.5 rounded-full transition-colors ${inv.status === 'PAID' ? 'text-slate-300 cursor-not-allowed' : 'text-violet-600 hover:bg-violet-50'}`}
+                              title={inv.status === 'PAID' ? "Paid invoices need no reminder" : "Schedule Reminder"}
+                              disabled={inv.status === 'PAID'}
+                            >
+                              <CalendarClock className="w-4 h-4" />
+                            </button>
                             <button onClick={() => handlePaidToggle(inv)} className={`p-1.5 rounded-full transition-colors ${inv.status === 'PAID' ? 'text-emerald-600 hover:bg-emerald-50' : 'text-amber-600 hover:bg-amber-50'}`} title="Mark Paid">
                               <CheckCircle2 className="w-4 h-4" />
                             </button>
@@ -246,6 +270,48 @@ export default function InvoiceDashboard() {
               <button onClick={() => setConfirmModal({ isOpen: false, type: '', inv: null })} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
               <button onClick={confirmTogglePaid} className={`px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm ${confirmModal.type === 'PAID' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-500 hover:bg-amber-600'}`}>Confirm</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Reminder Modal */}
+      {scheduleModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 rounded-full bg-violet-100 text-violet-600">
+                <CalendarClock className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-800">Schedule Reminder</h3>
+            </div>
+            <p className="text-slate-600 text-sm mb-4">
+              Set a date and time to automatically send a reminder email for Invoice #{scheduleModal.inv?.invoice_number}.
+            </p>
+            
+            {scheduleModal.inv?.reminder_scheduled_at && !scheduleModal.inv?.reminder_sent && (
+              <div className="mb-4 p-2 bg-blue-50 border border-blue-100 rounded text-xs text-blue-700">
+                Currently scheduled for:<br/>
+                <b>{new Date(scheduleModal.inv.reminder_scheduled_at).toLocaleString()}</b>
+              </div>
+            )}
+            
+            <form onSubmit={handleScheduleReminder}>
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-slate-700 mb-1">Select Date & Time</label>
+                <input 
+                  type="datetime-local" 
+                  required
+                  value={scheduleModal.datetime}
+                  onChange={(e) => setScheduleModal({ ...scheduleModal, datetime: e.target.value })}
+                  min={new Date().toISOString().slice(0, 16)}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400"
+                />
+              </div>
+              <div className="flex gap-3 justify-end">
+                <button type="button" onClick={() => setScheduleModal({ isOpen: false, inv: null, datetime: '' })} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+                <button type="submit" className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm bg-violet-600 hover:bg-violet-700">Schedule</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

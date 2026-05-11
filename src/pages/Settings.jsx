@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { setUser } from '../store/authSlice';
 import { useAuth } from '../hooks/useAuth';
 import { updateProfile } from '../api/authAPI';
 import { downloadCustomerTemplate } from '../api/customerAPI';
@@ -13,17 +15,43 @@ export default function Settings() {
     first_name: user?.first_name || '',
     last_name: user?.last_name || '',
     company_name: user?.company_name || '',
+    company_gst: user?.company_gst || '',
+    company_street: user?.company_street || '',
+    company_city: user?.company_city || '',
+    company_state: user?.company_state || '',
+    company_pin: user?.company_pin || '',
+    company_email: user?.company_email || '',
+    bank_name: user?.bank_name || '',
+    bank_account_number: user?.bank_account_number || '',
+    bank_ifsc: user?.bank_ifsc || '',
     phone: user?.phone || '',
+    company_logo: null
   });
   const [saving, setSaving] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  const dispatch = useDispatch();
+
   const handleSave = async () => {
     setSaving(true);
-    const { error } = await updateProfile(form);
-    if (error) toast.error(error);
-    else toast.success('Profile updated!');
+    const formData = new FormData();
+    Object.keys(form).forEach(key => {
+      // Don't append null/undefined, but DO append empty strings to clear fields.
+      // Also ignore company_logo if it's explicitly null.
+      if (form[key] !== null && form[key] !== undefined) {
+        // If it's the logo but it's not a File object (meaning it wasn't updated), we can skip it.
+        // Wait, if it's an empty string, it's a text field.
+        formData.append(key, form[key]);
+      }
+    });
+    const { data, error } = await updateProfile(formData);
+    if (error) {
+      toast.error(error);
+    } else {
+      toast.success('Profile updated!');
+      if (data && data.data) dispatch(setUser(data.data));
+    }
     setSaving(false);
   };
 
@@ -46,7 +74,13 @@ export default function Settings() {
     setDownloading(false);
   };
 
-  const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const onChange = (e) => {
+    if (e.target.type === 'file') {
+      setForm({ ...form, [e.target.name]: e.target.files[0] });
+    } else {
+      setForm({ ...form, [e.target.name]: e.target.value });
+    }
+  };
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -74,12 +108,66 @@ export default function Settings() {
                 <input name="last_name" value={form.last_name} onChange={onChange} className="input-field" />
               </div>
               <div>
-                <label className="text-xs text-slate-500 mb-1 flex items-center gap-1 font-medium"><Building2 className="w-3 h-3" /> Company</label>
+                <label className="text-xs text-slate-500 mb-1 flex items-center gap-1 font-medium"><Building2 className="w-3 h-3" /> Company Name</label>
                 <input name="company_name" value={form.company_name} onChange={onChange} className="input-field" />
+              </div>
+              <div>
+                <label className="text-xs text-slate-500 mb-1 flex items-center gap-1 font-medium"><Building2 className="w-3 h-3" /> Company GST</label>
+                <input name="company_gst" value={form.company_gst} onChange={onChange} className="input-field" />
+              </div>
+              <div className="md:col-span-2">
+                <label className="text-xs text-slate-500 mb-1 block font-medium">Street Address</label>
+                <input name="company_street" value={form.company_street} onChange={onChange} className="input-field" />
+              </div>
+              <div>
+                <label className="text-xs text-slate-500 mb-1 block font-medium">City</label>
+                <input name="company_city" value={form.company_city} onChange={onChange} className="input-field" />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs text-slate-500 mb-1 block font-medium">State</label>
+                  <input name="company_state" value={form.company_state} onChange={onChange} className="input-field" />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500 mb-1 block font-medium">PIN</label>
+                  <input name="company_pin" value={form.company_pin} onChange={onChange} className="input-field" />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-slate-500 mb-1 flex items-center gap-1 font-medium"><Building2 className="w-3 h-3" /> Company Email</label>
+                <input name="company_email" type="email" value={form.company_email} onChange={onChange} className="input-field" />
               </div>
               <div>
                 <label className="text-xs text-slate-500 mb-1 flex items-center gap-1 font-medium"><Phone className="w-3 h-3" /> Phone</label>
                 <input name="phone" value={form.phone} onChange={onChange} className="input-field" />
+              </div>
+              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 border border-slate-200 rounded-lg p-4">
+                <div className="md:col-span-3">
+                  <label className="text-xs text-slate-500 block font-medium">Bank Details (For Invoice Footer)</label>
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500 mb-1 block font-medium">Bank Name</label>
+                  <input name="bank_name" value={form.bank_name} onChange={onChange} className="input-field" placeholder="HDFC Bank" />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500 mb-1 block font-medium">A/C Number</label>
+                  <input name="bank_account_number" value={form.bank_account_number} onChange={onChange} className="input-field" placeholder="1234567890" />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500 mb-1 block font-medium">IFSC Code</label>
+                  <input name="bank_ifsc" value={form.bank_ifsc} onChange={onChange} className="input-field" placeholder="HDFC000123" />
+                </div>
+              </div>
+              <div className="md:col-span-2 border border-slate-200 rounded-lg p-4">
+                <label className="text-xs text-slate-500 mb-2 block font-medium">Company Logo</label>
+                {user?.company_logo && (
+                  <div className="mb-3">
+                    <p className="text-xs text-emerald-600 mb-1">Current Logo:</p>
+                    <img src={`http://localhost:8000${user.company_logo}`} alt="Logo" className="h-16 object-contain" />
+                  </div>
+                )}
+                <input name="company_logo" type="file" accept="image/*" onChange={onChange}
+                  className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100" />
               </div>
             </div>
             <div className="flex justify-end pt-4">

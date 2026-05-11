@@ -3,8 +3,10 @@ import api, { apiCall } from './axios';
 export const loginUser = (credentials) =>
   apiCall(() => api.post('/auth/login/', credentials));
 
-export const registerUser = (data) =>
-  apiCall(() => api.post('/auth/register/', data));
+export const registerUser = (data) => {
+  const config = data instanceof FormData ? { headers: { 'Content-Type': undefined } } : {};
+  return apiCall(() => api.post('/auth/register/', data, config));
+};
 
 export const logoutUser = (refreshToken) =>
   apiCall(() => api.post('/auth/logout/', { refresh: refreshToken }));
@@ -12,8 +14,10 @@ export const logoutUser = (refreshToken) =>
 export const getMe = () =>
   apiCall(() => api.get('/auth/me/'));
 
-export const updateProfile = (data) =>
-  apiCall(() => api.put('/auth/me/', data));
+export const updateProfile = (data) => {
+  const config = data instanceof FormData ? { headers: { 'Content-Type': undefined } } : {};
+  return apiCall(() => api.put('/auth/me/', data, config));
+};
 
 export const refreshToken = (refresh) =>
   apiCall(() => api.post('/auth/token/refresh/', { refresh }));

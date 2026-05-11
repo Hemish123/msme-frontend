@@ -12,6 +12,8 @@ export default function Login() {
   const [form, setForm] = useState({
     email: '', password: '', password_confirm: '',
     username: '', first_name: '', last_name: '', company_name: '',
+    company_gst: '', company_street: '', company_city: '', company_state: '', 
+    company_pin: '', company_email: '', phone: '', bank_name: '', bank_account_number: '', bank_ifsc: '', company_logo: null
   });
 
   const handleSubmit = async (e) => {
@@ -19,7 +21,15 @@ export default function Login() {
     setLoading(true);
     let result;
     if (isRegister) {
-      result = await register({ ...form, username: form.email.split('@')[0] });
+      const formData = new FormData();
+      Object.keys(form).forEach(key => {
+        if (key === 'username') {
+           formData.append(key, form.email.split('@')[0]);
+        } else if (form[key]) {
+           formData.append(key, form[key]);
+        }
+      });
+      result = await register(formData);
     } else {
       result = await login(form.email, form.password);
     }
@@ -30,7 +40,13 @@ export default function Login() {
     setLoading(false);
   };
 
-  const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const onChange = (e) => {
+    if (e.target.type === 'file') {
+      setForm({ ...form, [e.target.name]: e.target.files[0] });
+    } else {
+      setForm({ ...form, [e.target.name]: e.target.value });
+    }
+  };
 
   return (
     <div className="min-h-screen flex relative overflow-hidden">
@@ -128,10 +144,69 @@ export default function Login() {
               )}
 
               {isRegister && (
-                <div>
-                  <label className="text-xs text-slate-500 mb-1 block font-medium">Company Name</label>
-                  <input name="company_name" value={form.company_name} onChange={onChange}
-                    className="input-field" placeholder="Your MSME Business Name" />
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-slate-500 mb-1 block font-medium">Company Name</label>
+                      <input name="company_name" value={form.company_name} onChange={onChange}
+                        className="input-field" placeholder="Your MSME Name" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-500 mb-1 block font-medium">Company GST</label>
+                      <input name="company_gst" value={form.company_gst} onChange={onChange}
+                        className="input-field" placeholder="e.g. 24BTIPD48..." />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-slate-500 mb-1 block font-medium">Company Email</label>
+                      <input name="company_email" type="email" value={form.company_email} onChange={onChange}
+                        className="input-field" placeholder="info@company.com" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-500 mb-1 block font-medium">Company Phone</label>
+                      <input name="phone" value={form.phone} onChange={onChange}
+                        className="input-field" placeholder="+91..." />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500 mb-1 block font-medium">Street Address</label>
+                    <input name="company_street" value={form.company_street} onChange={onChange}
+                      className="input-field" placeholder="Flat No, Building, Street" />
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-xs text-slate-500 mb-1 block font-medium">City</label>
+                      <input name="company_city" value={form.company_city} onChange={onChange} className="input-field" placeholder="City" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-500 mb-1 block font-medium">State</label>
+                      <input name="company_state" value={form.company_state} onChange={onChange} className="input-field" placeholder="State" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-500 mb-1 block font-medium">PIN Code</label>
+                      <input name="company_pin" value={form.company_pin} onChange={onChange} className="input-field" placeholder="PIN" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-xs text-slate-500 mb-1 block font-medium">Bank Name</label>
+                      <input name="bank_name" value={form.bank_name} onChange={onChange} className="input-field" placeholder="HDFC Bank" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-500 mb-1 block font-medium">A/C Number</label>
+                      <input name="bank_account_number" value={form.bank_account_number} onChange={onChange} className="input-field" placeholder="1234567890" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-500 mb-1 block font-medium">IFSC Code</label>
+                      <input name="bank_ifsc" value={form.bank_ifsc} onChange={onChange} className="input-field" placeholder="HDFC000123" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500 mb-1 block font-medium">Company Logo (For Invoice Header)</label>
+                    <input name="company_logo" type="file" accept="image/*" onChange={onChange}
+                      className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100" />
+                  </div>
                 </div>
               )}
 
