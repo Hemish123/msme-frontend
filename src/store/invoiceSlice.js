@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { getCustomerDropdown } from '../api/customerAPI';
 import { createInvoiceCustomer } from '../api/invoiceCustomerAPI';
-import { getInventoryDropdown, createInventoryItem } from '../api/inventoryAPI';
+import { getInventoryDropdown, createProduct } from '../api/inventoryAPI';
 import { getInvoices, createInvoice, getNextInvoiceNumber, getInvoiceStats } from '../api/invoiceAPI';
 
 // ── Async thunks ──────────────────────────────────────────────────
@@ -36,7 +36,7 @@ export const fetchInventory = createAsyncThunk(
 export const addInventoryItem = createAsyncThunk(
   'invoices/addInventoryItem',
   async (formData, { rejectWithValue }) => {
-    const { data, error } = await createInventoryItem(formData);
+    const { data, error } = await createProduct(formData);
     if (error) return rejectWithValue(error);
     return data;
   }

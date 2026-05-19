@@ -12,16 +12,20 @@ import Settings from './pages/Settings';
 // Invoice module pages
 import AddInvoiceCustomer from './pages/invoice/AddInvoiceCustomer';
 import EditInvoiceCustomer from './pages/invoice/EditInvoiceCustomer';
-import AddInventory from './pages/invoice/AddInventory';
 import CreateInvoice from './pages/invoice/CreateInvoice';
 import EditInvoice from './pages/invoice/EditInvoice';
 import InvoiceDashboard from './pages/invoice/InvoiceDashboard';
 // New pages
 import AddCustomer from './pages/customers/AddCustomer';
 import BulkUpload from './pages/customers/BulkUpload';
-import InventoryList from './pages/inventory/InventoryList';
-import EditInventoryPage from './pages/inventory/EditInventory';
-
+// Inventory Module Pages (unified)
+import InventoryDashboardComponent from './pages/inventory/InventoryDashboard';
+import ProductList from './pages/inventory/ProductList';
+import StockMovementLog from './pages/inventory/StockMovementLog';
+import PurchaseList from './pages/inventory/PurchaseList';
+import SalesList from './pages/inventory/SalesList';
+import SupplierList from './pages/inventory/SupplierList';
+import Reports from './pages/inventory/Reports';
 function PrivateRoute({ children }) {
   const { isAuthenticated } = useSelector((s) => s.auth);
   return isAuthenticated ? children : <Navigate to="/login" replace />;
@@ -50,14 +54,21 @@ export default function App() {
         <Route path="/upload" element={<PrivateRoute><AppLayout><Upload /></AppLayout></PrivateRoute>} />
         <Route path="/analytics" element={<PrivateRoute><AppLayout><Analytics /></AppLayout></PrivateRoute>} />
         <Route path="/settings" element={<PrivateRoute><AppLayout><Settings /></AppLayout></PrivateRoute>} />
-        {/* Inventory routes */}
-        <Route path="/inventory" element={<PrivateRoute><AppLayout><InventoryList /></AppLayout></PrivateRoute>} />
-        <Route path="/inventory/add" element={<PrivateRoute><AppLayout><AddInventory /></AppLayout></PrivateRoute>} />
-        <Route path="/inventory/edit/:id" element={<PrivateRoute><AppLayout><EditInventoryPage /></AppLayout></PrivateRoute>} />
+        {/* Inventory Module (unified - no more separate InventoryList/AddInventory) */}
+        <Route path="/inventory" element={<Navigate to="/inventory/products" replace />} />
+        <Route path="/inventory/add" element={<Navigate to="/inventory/products" replace />} />
+        <Route path="/inventory/edit/:id" element={<Navigate to="/inventory/products" replace />} />
+        <Route path="/inventory/dashboard" element={<PrivateRoute><AppLayout><InventoryDashboardComponent /></AppLayout></PrivateRoute>} />
+        <Route path="/inventory/products" element={<PrivateRoute><AppLayout><ProductList /></AppLayout></PrivateRoute>} />
+        <Route path="/inventory/stock-movements" element={<PrivateRoute><AppLayout><StockMovementLog /></AppLayout></PrivateRoute>} />
+        <Route path="/inventory/purchases" element={<PrivateRoute><AppLayout><PurchaseList /></AppLayout></PrivateRoute>} />
+        <Route path="/inventory/sales" element={<PrivateRoute><AppLayout><SalesList /></AppLayout></PrivateRoute>} />
+        <Route path="/inventory/suppliers" element={<PrivateRoute><AppLayout><SupplierList /></AppLayout></PrivateRoute>} />
+        <Route path="/inventory/reports" element={<PrivateRoute><AppLayout><Reports /></AppLayout></PrivateRoute>} />
         {/* Invoice module routes */}
         <Route path="/invoice/add-customer" element={<PrivateRoute><AppLayout><AddInvoiceCustomer /></AppLayout></PrivateRoute>} />
         <Route path="/invoice/edit-customer/:id" element={<PrivateRoute><AppLayout><EditInvoiceCustomer /></AppLayout></PrivateRoute>} />
-        <Route path="/invoice/add-inventory" element={<PrivateRoute><AppLayout><AddInventory /></AppLayout></PrivateRoute>} />
+        <Route path="/invoice/add-inventory" element={<Navigate to="/inventory/products" replace />} />
         <Route path="/invoice/create" element={<PrivateRoute><AppLayout><CreateInvoice /></AppLayout></PrivateRoute>} />
         <Route path="/invoice/edit/:id" element={<PrivateRoute><AppLayout><EditInvoice /></AppLayout></PrivateRoute>} />
         <Route path="/invoice/dashboard" element={<PrivateRoute><AppLayout><InvoiceDashboard /></AppLayout></PrivateRoute>} />
@@ -69,3 +80,4 @@ export default function App() {
     </ErrorBoundary>
   );
 }
+

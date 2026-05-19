@@ -4,7 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import {
   LayoutDashboard, Users, Upload, BarChart3, Settings, LogOut,
   Menu, X, CreditCard, ChevronRight, FileText, Package,
-  Plus, ArrowUpFromLine, ChevronDown,
+  Plus, ArrowUpFromLine, ChevronDown, Box, Truck, ShoppingCart, PieChart
 } from 'lucide-react';
 import { APP_NAME } from '../../utils/constants';
 
@@ -17,7 +17,20 @@ const mainNavItems = [
 
 const invoiceNavItems = [
   { path: '/invoice/dashboard', label: 'Invoices', icon: FileText },
-  { path: '/inventory', label: 'Inventory', icon: Package },
+  { 
+    path: '/inventory', 
+    label: 'Inventory', 
+    icon: Package,
+    subItems: [
+      { path: '/inventory/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { path: '/inventory/products', label: 'Products', icon: Box },
+      { path: '/inventory/stock-movements', label: 'Stock Movements', icon: ArrowUpFromLine },
+      { path: '/inventory/purchases', label: 'Purchases', icon: Truck },
+      { path: '/inventory/sales', label: 'Sales', icon: ShoppingCart },
+      { path: '/inventory/suppliers', label: 'Suppliers', icon: Users },
+      { path: '/inventory/reports', label: 'Reports', icon: PieChart },
+    ]
+  },
   { path: '/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -30,7 +43,9 @@ export default function Sidebar() {
 
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
 
-  const toggleExpand = (path) => {
+  const toggleExpand = (e, path) => {
+    e.preventDefault();
+    e.stopPropagation();
     setExpandedItems((prev) => ({ ...prev, [path]: !prev[path] }));
   };
 
@@ -38,37 +53,50 @@ export default function Sidebar() {
     const Icon = item.icon;
     const active = isActive(item.path);
     const hasSubItems = item.subItems && item.subItems.length > 0;
-    const isExpanded = expandedItems[item.path] || active;
+    
+    // If not manually toggled yet, it's expanded if it's active
+    const isExpanded = expandedItems[item.path] !== undefined 
+      ? expandedItems[item.path] 
+      : active;
 
     return (
       <div key={item.path}>
-        <div className="flex items-center">
-          <Link
-            to={item.path}
-            onClick={() => setMobileOpen(false)}
-            className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group
-              ${active
-                ? 'bg-brand-50 text-brand-600 border border-brand-100 shadow-sm'
-                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700 border border-transparent'
-              }`}
-          >
-            <Icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-brand-500' : 'group-hover:text-slate-700'}`} />
-            {!collapsed && <span className="font-medium text-sm">{item.label}</span>}
-            {!collapsed && active && !hasSubItems && <ChevronRight className="w-4 h-4 ml-auto" />}
-          </Link>
-          {!collapsed && hasSubItems && (
+        <div className="flex items-center group">
+          {hasSubItems ? (
             <button
-              onClick={() => toggleExpand(item.path)}
-              className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50 transition-colors"
+              onClick={(e) => toggleExpand(e, item.path)}
+              className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
+                ${active
+                  ? 'bg-brand-50 text-brand-600 border border-brand-100 shadow-sm'
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700 border border-transparent'
+                }`}
             >
-              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+              <Icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-brand-500' : 'group-hover:text-slate-700'}`} />
+              {!collapsed && <span className="font-medium text-sm text-left flex-1">{item.label}</span>}
+              {!collapsed && (
+                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+              )}
             </button>
+          ) : (
+            <Link
+              to={item.path}
+              onClick={() => setMobileOpen(false)}
+              className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group
+                ${active
+                  ? 'bg-brand-50 text-brand-600 border border-brand-100 shadow-sm'
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700 border border-transparent'
+                }`}
+            >
+              <Icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-brand-500' : 'group-hover:text-slate-700'}`} />
+              {!collapsed && <span className="font-medium text-sm">{item.label}</span>}
+              {!collapsed && active && <ChevronRight className="w-4 h-4 ml-auto" />}
+            </Link>
           )}
         </div>
 
         {/* Sub-items */}
         {!collapsed && hasSubItems && isExpanded && (
-          <div className="ml-2 mt-0.5 space-y-0.5">
+          <div className="ml-2 mt-0.5 space-y-0.5 animate-in slide-in-from-top-1 duration-200">
             {item.subItems.map((sub) => {
               const SubIcon = sub.icon;
               const subActive = isActive(sub.path);
@@ -79,8 +107,8 @@ export default function Sidebar() {
                   onClick={() => setMobileOpen(false)}
                   className={`flex items-center gap-2.5 px-3 py-1.5 ml-5 rounded-lg transition-all duration-200 text-xs
                     ${subActive
-                      ? 'text-brand-600 bg-brand-50/60 font-semibold'
-                      : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                      ? 'text-brand-600 bg-brand-50/60 font-semibold border-l-2 border-brand-500 pl-2'
+                      : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-l-2 border-transparent pl-2'
                     }`}
                 >
                   <SubIcon className="w-3.5 h-3.5 flex-shrink-0" />

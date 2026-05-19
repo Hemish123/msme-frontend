@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { FileText, IndianRupee, Clock, CheckCircle, Download, Pencil, Trash2, CheckCircle2, Search, Mail, CalendarClock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../hooks/useAuth';
 import InvoiceNav from '../../components/invoice/InvoiceNav';
 import { getInvoiceStats, getInvoices, downloadInvoicePDF, deleteInvoice, updateInvoice, resendInvoiceEmail, scheduleInvoiceReminder } from '../../api/invoiceAPI';
 
@@ -13,6 +14,7 @@ const STATUS_COLORS = {
 };
 
 export default function InvoiceDashboard() {
+  const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -60,6 +62,26 @@ export default function InvoiceDashboard() {
     const { error } = await resendInvoiceEmail(inv.id);
     if (error) toast.error('Failed to resend email');
     else { toast.success(`Email resent to ${inv.customer_email || 'customer'}`); loadData(); }
+  };
+
+  const handleWhatsAppMessage = (inv) => {
+    const mobile = inv.customer_mobile || "";
+    if (!mobile) {
+      toast.error("Customer mobile number not found.");
+      return;
+    }
+    
+    // Clean mobile number: remove spaces, dashes, etc.
+    const cleanMobile = mobile.replace(/\D/g, '');
+    const finalMobile = cleanMobile.length === 10 ? `91${cleanMobile}` : cleanMobile;
+    
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || window.location.origin;
+    const pdfUrl = `${baseUrl}${inv.public_pdf_url}`;
+    
+    const message = `Hello ${inv.customer_name},\n\nThis is a reminder for your Invoice *#${inv.invoice_number}* from *${user?.company_name || 'our business'}*.\n\n*Amount:* ₹${parseFloat(inv.grand_total).toLocaleString('en-IN')}\n*Date:* ${inv.billing_date}\n\nYou can view/download your invoice PDF here:\n${pdfUrl}\n\nThank you!`;
+    
+    const encodedMessage = encodeURIComponent(message);
+    window.open(`https://wa.me/${finalMobile}?text=${encodedMessage}`, '_blank');
   };
 
   const handleDeleteInvoice = async (id) => {
@@ -200,7 +222,18 @@ export default function InvoiceDashboard() {
                         </td>
                         <td className="px-5 py-3 text-center">
                           <div className="flex justify-center gap-1">
+                            <button 
+                              onClick={() => handleWhatsAppMessage(inv)} 
+                              className={`p-1.5 rounded-full transition-colors ${inv.status === 'PAID' ? 'text-slate-300 cursor-not-allowed' : 'text-emerald-500 hover:bg-emerald-50'}`} 
+                              title={inv.status === 'PAID' ? "Invoice already paid" : "Send WhatsApp Message"}
+                              disabled={inv.status === 'PAID'}
+                            >
+                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.067 2.877 1.215 3.076.149.198 2.095 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                               </svg>
+                            </button>
                             <button onClick={() => handleDownload(inv)} disabled={downloadingId === inv.id} className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors" title="View PDF">
+
                               <Download className={`w-4 h-4 ${downloadingId === inv.id ? 'animate-bounce' : ''}`} />
                             </button>
                             <button 

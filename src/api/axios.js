@@ -98,11 +98,21 @@ export const apiCall = async (fn) => {
     const response = await fn();
     return { data: response.data, error: null };
   } catch (error) {
-    const message =
-      error.response?.data?.message ||
-      error.response?.data?.detail ||
-      error.message ||
-      'An error occurred';
+    const data = error.response?.data;
+    let message = error.message || 'An error occurred';
+    
+    if (data) {
+      if (typeof data === 'string') {
+        message = data;
+      } else if (data.message) {
+        message = data.message;
+      } else if (data.detail) {
+        message = data.detail;
+      } else {
+        message = JSON.stringify(data);
+      }
+    }
+    
     return { data: null, error: message };
   }
 };
