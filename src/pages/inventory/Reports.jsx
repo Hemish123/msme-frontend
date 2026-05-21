@@ -280,11 +280,15 @@ export default function Reports() {
   const handleExportPDF = async () => {
     if (!reportData || exporting) return;
     setExporting(true);
+    alert('Starting PDF export... If you see this, the new code is loaded!');
+    console.log('PDF Export triggered for:', activeTab);
     const reportType = TAB_TO_REPORT_TYPE[activeTab];
     const result = await inventoryAPI.exportReportPDF(reportType);
     if (result.error) {
       console.error('PDF export failed:', result.error);
-      alert('Failed to export PDF. Please try again.');
+      alert(`Failed to export PDF: ${result.error}`);
+    } else {
+      alert('PDF export successful!');
     }
     setExporting(false);
   };
