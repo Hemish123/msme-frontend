@@ -60,3 +60,48 @@ export const getStockValueReport = () => apiCall(() => api.get('/inventory/repor
 export const getSalesSummaryReport = () => apiCall(() => api.get('/inventory/reports/sales-summary/'));
 export const getPurchaseSummaryReport = () => apiCall(() => api.get('/inventory/reports/purchase-summary/'));
 
+// Export report as PDF (backend-generated)
+export const exportReportPDF = async (reportType) => {
+  try {
+    const response = await api.get(`/inventory/reports/${reportType}/export-pdf/`, {
+      responseType: 'blob',
+    });
+
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    
+    const disposition = response.headers['content-disposition'];
+    let filename = `${reportType}_report.pdf`;
+    if (disposition) {
+      const match = disposition.match(/filename="?(.+?)"?$/);
+      if (match) filename = match[1];
+    }
+    
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+    return { data: true, error: null };
+  } catch (error) {
+    console.error('PDF export error:', error);
+    let errorMessage = 'Failed to export PDF';
+    
+    if (error.response && error.response.data instanceof Blob) {
+      // Convert blob error response to text
+      const text = await error.response.data.text();
+      try {
+        const json = JSON.parse(text);
+        errorMessage = json.error || json.detail || errorMessage;
+      } catch (e) {
+        errorMessage = text || errorMessage;
+      }
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    return { data: null, error: errorMessage };
+  }
+};

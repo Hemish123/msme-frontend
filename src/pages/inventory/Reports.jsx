@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as inventoryAPI from '../../api/inventoryAPI';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, CartesianGrid } from 'recharts';
-import { Download, AlertTriangle, TrendingUp, Package, ShoppingCart, Users, CheckCircle, Clock, XCircle, ArrowUpRight, ArrowDownRight } from 'lucide-react';
-
+import { Download, AlertTriangle, TrendingUp, Package, ShoppingCart, Users, CheckCircle, Clock, XCircle, ArrowUpRight, ArrowDownRight, Loader2 } from 'lucide-react';
 const STATUS_COLORS = {
   COMPLETED: 'bg-emerald-100 text-emerald-700',
   RECEIVED: 'bg-emerald-100 text-emerald-700',
@@ -269,6 +268,26 @@ export default function Reports() {
   const [activeTab, setActiveTab] = useState('stock');
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  const TAB_TO_REPORT_TYPE = {
+    'stock': 'stock-summary',
+    'low-stock': 'low-stock',
+    'sales': 'sales-summary',
+    'purchases': 'purchase-summary',
+  };
+
+  const handleExportPDF = async () => {
+    if (!reportData || exporting) return;
+    setExporting(true);
+    const reportType = TAB_TO_REPORT_TYPE[activeTab];
+    const result = await inventoryAPI.exportReportPDF(reportType);
+    if (result.error) {
+      console.error('PDF export failed:', result.error);
+      alert('Failed to export PDF. Please try again.');
+    }
+    setExporting(false);
+  };
 
   useEffect(() => {
     fetchReport(activeTab);
@@ -311,8 +330,15 @@ export default function Reports() {
           <h1 className="text-3xl font-sora font-bold text-slate-800">Inventory Reports</h1>
           <p className="text-slate-500 mt-1">Analytics and summaries for your inventory</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl font-medium hover:bg-slate-50 transition-colors shadow-sm">
-          <Download className="w-5 h-5" /> Export PDF
+        <button 
+          onClick={handleExportPDF}
+          disabled={!reportData || loading || exporting}
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl font-medium hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+          {exporting ? (
+            <><Loader2 className="w-5 h-5 animate-spin" /> Exporting...</>
+          ) : (
+            <><Download className="w-5 h-5" /> Export PDF</>
+          )}
         </button>
       </div>
 
@@ -342,7 +368,7 @@ export default function Reports() {
             </div>
           </div>
         ) : (
-          <div>
+          <div id="report-content" className="p-4 bg-slate-50 min-h-full">
             {activeTab === 'stock' && Array.isArray(reportData) && (
               <div className="bg-white/80 backdrop-blur-xl border border-slate-200/60 rounded-2xl p-5 shadow-lg">
                 <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2"><Package className="w-5 h-5" /> Current Stock Summary</h2>
